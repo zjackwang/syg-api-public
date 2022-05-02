@@ -15,7 +15,7 @@ generic_item_set = syd_data['GenericItemSet']
 
 
 def query_all_generic_items():
-    return query_generic_items()
+    return query_generic_items({})
 
 
 def query_generic_item_parameterized(request):
