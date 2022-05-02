@@ -1,17 +1,31 @@
+from nis import match
 from pymongo import MongoClient
 from config import mongo_key
 
-client = MongoClient(f"mongodb+srv://zjackwang:{mongo_key}@cluster0.5ocd6.mongodb.net/test?authSource=admin&replicaSet=atlas-q2c9r8-shard-0&readPreference=primary&appname=MongoDB%20Compass&ssl=true")
+client = MongoClient(
+    f"mongodb+srv://zjackwang:{mongo_key}@cluster0.5ocd6.mongodb.net/test?authSource=admin&replicaSet=atlas-q2c9r8-shard-0&readPreference=primary&appname=MongoDB%20Compass&ssl=true"
+)
 
-## Database 
-syd_data = client['syg_data']
+## Database
+syg_data = client["syg_data"]
+
 
 ###
 ## Collection References
-##   
+##
 
-## Generic Item Set 
-generic_item_set = syd_data['GenericItemSet']
+
+def format_returned_items(mongo_db_cursor):
+    items = [item for item in mongo_db_cursor]
+    # ObjectID is not JSON Serializable
+    for item in items:
+        del item["_id"]
+
+    return items
+
+
+## Generic Item Set
+generic_item_set = syg_data["GenericItemSet"]
 
 
 def query_all_generic_items():
@@ -28,21 +42,32 @@ def query_generic_items(request):
     return generic_items
 
 
-def format_returned_items(mongo_db_cursor):
-    generic_items = [
-        item 
-        for item in mongo_db_cursor 
-    ]
-    # ObjectID is not JSON Serializable 
-    for item in generic_items: 
-        del item['_id']
-
-    return generic_items
-
-
 def add_new_generic_item(generic_item):
     pass
 
 
 def update_new_generic_item():
     pass
+
+
+## GenericItemList
+def query_generic_item_names():
+    returned_items = generic_item_set.find({}, {"_id": 0, "Name": True})
+    generic_item_names = [item["Name"] for item in returned_items]
+    return generic_item_names
+
+
+## MatchedItemDict
+matched_item_dict = syg_data["MatchedItemDict"]
+
+
+def query_all_items():
+    returned_items = matched_item_dict.find()
+    matchedItems = format_returned_items(returned_items)
+    return matchedItems
+
+
+def query_scanned_item_name(scanned_item_name):
+    returned_item = matched_item_dict.find({"ScannedItemName": scanned_item_name})
+    matched_item = format_returned_items(returned_item)
+    return matched_item
