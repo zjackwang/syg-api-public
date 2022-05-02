@@ -14,14 +14,6 @@ app = Flask(__name__)
 api = Api(app)
 
 ##
-## Api resource routing 
-##
-def setup_routes():
-    api.add_resource(GenericItem, '/genericitem/<generic_item_name>')
-    api.add_resource(GenericItemSet, '/genericitemset')
-
-
-##
 ## Setup arguments 
 ## 
 
@@ -96,6 +88,12 @@ class GenericItemSet(Resource):
         return query_all_generic_items()
         
 
+##
+## Api resource routing 
+##
+api.add_resource(GenericItem, '/genericitem/<generic_item_name>')
+api.add_resource(GenericItemSet, '/genericitemset')
+
+
 if __name__ == '__main__':
-    setup_routes()
     app.run(debug=True)
