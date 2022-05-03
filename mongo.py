@@ -18,8 +18,6 @@ syg_data = client["syg_data"]
 def format_returned_items(mongo_db_cursor):
     items = [item for item in mongo_db_cursor]
     # ObjectID is not JSON Serializable
-    for item in items:
-        del item["_id"]
 
     return items
 
@@ -37,7 +35,7 @@ def query_generic_item_parameterized(request):
 
 
 def query_generic_items(request):
-    returned_generic_items = generic_item_set.find(request)
+    returned_generic_items = generic_item_set.find(request, {"_id": 0})
     generic_items = format_returned_items(returned_generic_items)
     return generic_items
 
@@ -62,12 +60,14 @@ matched_item_dict = syg_data["MatchedItemDict"]
 
 
 def query_all_items():
-    returned_items = matched_item_dict.find()
+    returned_items = matched_item_dict.find({}, {"_id": 0})
     matchedItems = format_returned_items(returned_items)
     return matchedItems
 
 
 def query_scanned_item_name(scanned_item_name):
-    returned_item = matched_item_dict.find({"ScannedItemName": scanned_item_name})
-    matched_item = format_returned_items(returned_item)
+    returned_item = matched_item_dict.find(
+        {"ScannedItemName": scanned_item_name}, {"_id": 0, "ScannedItemName": 0}
+    )
+    matched_item = [item["GenericItemName"] for item in returned_item]
     return matched_item

@@ -1,5 +1,4 @@
-from curses.ascii import SUB
-from flask import Flask, jsonify, request
+from flask import Flask, request
 from flask_restful import abort, Api, Resource
 
 from mongo import (
@@ -12,7 +11,14 @@ from mongo import (
 """
 Argument Handling
 - form 
-- ex: curl http://localhost:5000/genericitemset/apple -d "isCut=True" 
+
+TESTs
+curl http://localhost:5000/genericitemset
+curl http://localhost:5000/genericitem/Apple 
+curl http://localhost:5000/genericitem/Apple -d "IsCut=True"
+curl http://localhost:5000/genericitem/Brussels%20Sprouts -d "Subcategory=On%20Stem"
+curl http://localhost:5000/genericitemlist
+curl http://localhost:5000/matcheditemdict/Premium%20Bananas
 """
 
 app = Flask(__name__)
@@ -26,9 +32,14 @@ NAME = "Name"
 ISCUT = "IsCut"
 ISCOOKED = "IsCooked"
 ISOPENED = "IsOpened"
-SUBCATEGORY = "SubCategory"
+SUBCATEGORY = "Subcategory"
 BOOL_TRUE_LIST = ["True", "true"]
 BOOL_FALSE_LIST = ["False", "false"]
+
+VALID_FORM_PARAMETERS = {ISCUT, ISCOOKED, ISOPENED, SUBCATEGORY}
+VALID_FORM_PARAMETERS_MESSAGE = (
+    "IsCut=<Bool>, IsCooked=<Bool>, IsOpened=<Bool>, SubCategory=<Str>"
+)
 
 
 def abort_generic_item_doesnt_exist(generic_item_name, args):
@@ -39,12 +50,23 @@ def abort_generic_item_doesnt_exist(generic_item_name, args):
 
 
 def abort_invalid_args(args):
-    abort(400, message=f"Invalid args: {args}...")
+    invalid_args = [f"'{arg}': '{value}'" for arg, value in args.items()]
+    invalid_args = ", ".join(invalid_args)
+    abort(
+        400,
+        message=f"Invalid args: {invalid_args}... Valid Parameters: {VALID_FORM_PARAMETERS_MESSAGE}",
+    )
 
 
 def abort_invalid_bool_string(bool_str, args):
     if bool_str not in BOOL_TRUE_LIST and bool_str not in BOOL_FALSE_LIST:
         abort_invalid_args(args)
+
+
+def abort_if_errant_parameter(args):
+    for arg in args:
+        if arg not in VALID_FORM_PARAMETERS:
+            abort_invalid_args(args)
 
 
 def abort_matched_item_doesnt_exist(scanned_item_name):
@@ -75,6 +97,7 @@ class GenericItem(Resource):
 
     def post(self, generic_item_name):
         args = request.form
+        abort_if_errant_parameter(args)
         mongo_request = {NAME: generic_item_name}
 
         ## Retrieve parameters and validate
