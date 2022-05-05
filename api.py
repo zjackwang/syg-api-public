@@ -4,7 +4,7 @@ from flask_restful import abort, Api, Resource
 import hmac
 import hashlib
 
-from mongo import (
+from data import (
     query_all_generic_items,
     query_generic_item_parameterized,
     query_generic_item_names,
@@ -45,6 +45,10 @@ VALID_FORM_PARAMETERS = {ISCUT, ISCOOKED, ISOPENED, SUBCATEGORY}
 VALID_FORM_PARAMETERS_MESSAGE = (
     "IsCut=<Bool>, IsCooked=<Bool>, IsOpened=<Bool>, SubCategory=<Str>"
 )
+
+##
+## Abort conditions
+##
 
 
 def abort_generic_item_doesnt_exist(generic_item_name, args):
@@ -89,6 +93,29 @@ def abort_invalid_hmac_signature():
     abort(403, message="Received HMAC signature could not be verified.")
 
 
+##
+## Validation
+##
+
+
+def validate_headers():
+    headers = request.headers
+    data = request.get_data()
+
+    ## Validate hmac signature given api key
+    received_api_key = headers["X-Syg-Api-Key"]
+    received_hmac_sig = headers["X-Hmac-Signature"]
+
+    if received_api_key != api_key:
+        abort_incorrect_api_key(received_api_key)
+    generated_hmac_sig = str(
+        hmac.digest(key=secret_key.encode(), msg=data, digest=hashlib.sha256)
+    )
+
+    if not hmac.compare_digest(received_hmac_sig, generated_hmac_sig):
+        abort_invalid_hmac_signature()
+
+
 """
 Resources 
 1. GenericItemSet
@@ -116,6 +143,7 @@ Resources
 
 class GenericItem(Resource):
     def get(self, generic_item_name):
+        validate_headers()
         mongo_request = {NAME: generic_item_name}
 
         returned_items = query_generic_item_parameterized(mongo_request)
@@ -125,31 +153,7 @@ class GenericItem(Resource):
         return returned_items
 
     def post(self, generic_item_name):
-
-        headers = request.headers
-        data = request.get_data()
-
-        ## TESTING
-        # print("\n***Headers***\n")
-        # print(headers)
-        # print("***Data***")
-        # print(data)
-        # print(type(data))
-        ## TESTING
-
-        ## Validate hmac signature given api key
-        received_api_key = headers["X-Syg-Api-Key"]
-        received_hmac_sig = headers["X-Hmac-Signature"]
-
-        if received_api_key != api_key:
-            abort_incorrect_api_key(received_api_key)
-        generated_hmac_sig = str(
-            hmac.digest(key=secret_key.encode(), msg=data, digest=hashlib.sha256)
-        )
-
-        if not hmac.compare_digest(received_hmac_sig, generated_hmac_sig):
-            abort_invalid_hmac_signature()
-
+        validate_headers()
         args = request.form
         abort_if_errant_parameter(args)
         mongo_request = {NAME: generic_item_name}
@@ -184,17 +188,20 @@ class GenericItem(Resource):
 
 class GenericItemSet(Resource):
     def get(self):
+        validate_headers()
         return query_all_generic_items()
 
 
 class GenericItemList(Resource):
     def get(self):
+        validate_headers()
         matched_items = query_generic_item_names()
         return matched_items
 
 
 class MatchedItemDict(Resource):
     def get(self, scanned_item_name):
+        validate_headers()
         matched_item = query_scanned_item_name(scanned_item_name)
         if len(matched_item) == 0:
             abort_matched_item_doesnt_exist(scanned_item_name)
