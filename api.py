@@ -1,12 +1,17 @@
 from flask import Flask, request
 from flask_restful import abort, Api, Resource
 
+import hmac
+import hashlib
+
 from mongo import (
     query_all_generic_items,
     query_generic_item_parameterized,
     query_generic_item_names,
     query_scanned_item_name,
 )
+
+from config import api_key, secret_key
 
 """
 Argument Handling
@@ -76,12 +81,36 @@ def abort_matched_item_doesnt_exist(scanned_item_name):
     )
 
 
+def abort_incorrect_api_key(api_key):
+    abort(403, message=f"Unrecognized api key {api_key}.")
+
+
+def abort_invalid_hmac_signature():
+    abort(403, message="Received HMAC signature could not be verified.")
+
+
 """
 Resources 
 1. GenericItemSet
+    all generic items 
 2. GenericItem
+    specific generic items 
+        - query one
+        - query some 
+        - update 
+        - delete
 3. GenericItemList
+    list of strings. list of generic item names. 
+        - query all 
+        - add one 
+        - add some ?
 4. MatchedItemDict 
+    all matched items 
+        - query all 
+        - add one 
+        - add some ?
+        - update ? 
+        - remove ? 
 """
 
 
@@ -96,6 +125,31 @@ class GenericItem(Resource):
         return returned_items
 
     def post(self, generic_item_name):
+
+        headers = request.headers
+        data = request.get_data()
+
+        ## TESTING
+        # print("\n***Headers***\n")
+        # print(headers)
+        # print("***Data***")
+        # print(data)
+        # print(type(data))
+        ## TESTING
+
+        ## Validate hmac signature given api key
+        received_api_key = headers["X-Syg-Api-Key"]
+        received_hmac_sig = headers["X-Hmac-Signature"]
+
+        if received_api_key != api_key:
+            abort_incorrect_api_key(received_api_key)
+        generated_hmac_sig = str(
+            hmac.digest(key=secret_key.encode(), msg=data, digest=hashlib.sha256)
+        )
+
+        if not hmac.compare_digest(received_hmac_sig, generated_hmac_sig):
+            abort_invalid_hmac_signature()
+
         args = request.form
         abort_if_errant_parameter(args)
         mongo_request = {NAME: generic_item_name}
@@ -124,6 +178,7 @@ class GenericItem(Resource):
         returned_items = query_generic_item_parameterized(mongo_request)
         if len(returned_items) == 0:
             abort_generic_item_doesnt_exist(generic_item_name, mongo_request)
+
         return returned_items
 
 
