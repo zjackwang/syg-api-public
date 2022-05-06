@@ -1,4 +1,8 @@
 from pymongo import MongoClient
+import bson
+
+from typing import Any, Dict
+
 from config import mongo_key
 
 client = MongoClient(
@@ -9,16 +13,19 @@ client = MongoClient(
 syg_data = client["syg_data"]
 
 
-###
-## Collection References
-##
-
-
+## Helper
 def format_returned_items(mongo_db_cursor):
     items = [item for item in mongo_db_cursor]
     # ObjectID is not JSON Serializable
-
     return items
+
+
+## Typings
+MongoObject = Dict[str, Any]
+
+###
+## Collection References
+##
 
 
 ## Generic Item Set
@@ -39,12 +46,24 @@ def query_generic_items(request):
     return generic_items
 
 
-def add_new_generic_item(generic_item):
-    pass
+## TODO: Write tests
+def add_generic_item(generic_item: MongoObject) -> bool:
+    result = generic_item_set.insert_one(generic_item)
+    return result.acknowledged
 
 
-def update_new_generic_item():
-    pass
+def update_generic_item(
+    generic_item_filter: MongoObject, partially_updated_generic_item: MongoObject
+) -> bool:
+    result = generic_item_set.update_one(
+        generic_item_filter, {"$set": partially_updated_generic_item}
+    )
+
+    return result.acknowledged
+
+
+def delete_generic_item(generic_item_filter: MongoObject) -> bool:
+    result = generic_item_set.delete_one(generic_item_filter)
 
 
 ## GenericItemList
