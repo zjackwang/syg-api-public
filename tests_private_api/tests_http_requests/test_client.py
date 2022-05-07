@@ -3,7 +3,6 @@ Fires off http requests to private api and tests return code
  
 """
 
-from os import lseek
 from time import sleep
 import requests
 import unittest
@@ -15,7 +14,7 @@ from security.hmac_sig_gen import generate_hmac_signature
 
 
 def run_local_api():
-    api = subprocess.Popen(["python", "private_api/api.py"])
+    api = subprocess.Popen(["python", "api.py"])
     return api
 
 
@@ -38,22 +37,25 @@ def make_keyed_get_request(payload, url) -> requests.Response:
 
 def make_keyed_post_request(payload, url) -> requests.Response:
     hmac_sig = str(generate_hmac_signature(payload, secret_key))
-
+    print(hmac_sig)
     return requests.post(
         url,
         data=payload,
         headers={"X-Syg-Api-Key": api_key, "X-HMAC-Signature": hmac_sig},
     )
 
-
+##
 ## Endpoints
+##
+
+## Local endpoints
 GENERIC_ITEM_URL_LOCAL = "http://localhost:5000/genericitem/Apple"
 GENERIC_ITEM_SUBCATEGORY_LOCAL = "http://localhost:5000/genericitem/Brussels%20Sprouts"
 GENERIC_ITEM_SET_LOCAL = "http://localhost:5000/genericitemset"
 GENERIC_ITEM_LIST_LOCAL = "http://localhost:5000/genericitemlist"
 MATCHED_ITEM_DICT_LOCAL = "http://localhost:5000/matcheditemdict/Premium%20Bananas"
 
-
+## Remote endpoints
 GENERIC_ITEM_URL_REMOTE = "https://api-syg.herokuapp.com/genericitem/Apple"
 GENERIC_ITEM_SUBCATEGORY_REMOTE = (
     "https://api-syg.herokuapp.com/genericitem/Brussels%20Sprouts"
@@ -126,6 +128,7 @@ class PrivateLocalAPITests(unittest.TestCase):
     def test_matched_item_dict_get(self):
         payload = MATCHED_ITEM_DICT_LOCAL
         response = make_keyed_get_request(payload, MATCHED_ITEM_DICT_LOCAL)
+        print(response.reason)
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
             response.status_code,

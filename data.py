@@ -1,5 +1,4 @@
 from pymongo import MongoClient
-import bson
 
 from typing import Any, Dict
 
@@ -18,7 +17,6 @@ def format_returned_items(mongo_db_cursor):
     items = [item for item in mongo_db_cursor]
     # ObjectID is not JSON Serializable
     return items
-
 
 ## Typings
 MongoObject = Dict[str, Any]
@@ -46,7 +44,6 @@ def query_generic_items(request):
     return generic_items
 
 
-## TODO: Write tests
 def add_generic_item(generic_item: MongoObject) -> bool:
     result = generic_item_set.insert_one(generic_item)
     return result.acknowledged

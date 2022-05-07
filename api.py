@@ -13,19 +13,6 @@ from data import (
 
 from config import api_key, secret_key
 
-"""
-Argument Handling
-- form 
-
-TESTs
-curl http://localhost:5000/genericitemset
-curl http://localhost:5000/genericitem/Apple 
-curl http://localhost:5000/genericitem/Apple -d "IsCut=True"
-curl http://localhost:5000/genericitem/Brussels%20Sprouts -d "Subcategory=On%20Stem"
-curl http://localhost:5000/genericitemlist
-curl http://localhost:5000/matcheditemdict/Premium%20Bananas
-"""
-
 app = Flask(__name__)
 api = Api(app)
 
@@ -111,6 +98,7 @@ def validate_headers():
     generated_hmac_sig = str(
         hmac.digest(key=secret_key.encode(), msg=data, digest=hashlib.sha256)
     )
+    print(f"GENERATED HMAC: {generated_hmac_sig}")
 
     if not hmac.compare_digest(received_hmac_sig, generated_hmac_sig):
         abort_invalid_hmac_signature()
@@ -138,6 +126,9 @@ Resources
         - add some ?
         - update ? 
         - remove ? 
+
+Argument Handling
+- form 
 """
 
 
@@ -207,6 +198,9 @@ class MatchedItemDict(Resource):
             abort_matched_item_doesnt_exist(scanned_item_name)
         return matched_item
 
+class Example(Resource):
+    def get(self):
+        return {"content": "Hello World!"}
 
 ##
 ## Api resource routing
@@ -215,7 +209,7 @@ api.add_resource(GenericItem, "/genericitem/<generic_item_name>")
 api.add_resource(GenericItemSet, "/genericitemset")
 api.add_resource(GenericItemList, "/genericitemlist")
 api.add_resource(MatchedItemDict, "/matcheditemdict/<scanned_item_name>")
-
+api.add_resource(Example, "/")
 
 if __name__ == "__main__":
     app.run(debug=True)
