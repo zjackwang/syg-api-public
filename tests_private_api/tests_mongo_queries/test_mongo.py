@@ -9,125 +9,161 @@ import unittest
 
 from data import *
 
-## 
-## Test Generic Item Set Operations 
-## 
+##
+## Test Generic Item Set Operations
+##
+
 
 class GenericItemSetTests(unittest.TestCase):
     def setUp(self) -> None:
-        pass 
+        ## Add random item
+        self.random_item = {
+            "Name": "Random",
+            "Category": "Produce",
+            "Subcategory": "Fresh",
+            "IsCut": False,
+            "DaysInFridge": 10.0,
+            "DaysOnShelf": 0.0,
+            "DaysInFreezer": 420.0,
+            "Notes": "",
+            "Links": "",
+        }
+
+        result = generic_item_set.insert_one(self.random_item)
+        self.inserted_id = result.inserted_id
 
     def test_query_all_generic_items(self):
-        pass 
+        pass
 
     def test_query_generic_item_parameterized(self):
-        ## Ask for Apple by name only
-        request = {"Name": "Apple"}
-        NUM_APPLE_ITEMS = 2
+        second_random_item = {
+            "Name": "Random",
+            "Category": "Produce",
+            "Subcategory": "Fresh",
+            "IsCut": True,
+            "DaysInFridge": 10.0,
+            "DaysOnShelf": 1000.0,
+            "DaysInFreezer": 420.0,
+            "Notes": "",
+            "Links": "",
+        }
+        generic_item_set.insert_one(second_random_item)
 
-        items = query_generic_item_parameterized(request) 
-        self.assertEquals(len(items), NUM_APPLE_ITEMS) 
+        ## Ask for random item by name only
+        request = {"Name": self.random_item["Name"]}
+        NUM_RANDOM_ITEMS = 2
+
+        items = query_generic_item_parameterized(request)
+        self.assertEqual(len(items), NUM_RANDOM_ITEMS)
+
+        generic_item_set.delete_one(second_random_item)
 
     def test_query_generic_item_parameterized_iscut(self):
-        ## Ask for Apple by name and IsCut = false 
-        request = {"Name": "Apple", "IsCut": False}
-        EXPECTED_APPLE_ITEM = {
-            "Name": "Apple",
+        second_random_item = {
+            "Name": "Random",
             "Category": "Produce",
             "Subcategory": "Fresh",
-            "IsCut": False,
-            "DaysInFridge": 30.0,
-            "DaysOnShelf": 0.0,
-            "DaysInFreezer": 240.0,
+            "IsCut": True,
+            "DaysInFridge": 10.0,
+            "DaysOnShelf": 1000.0,
+            "DaysInFreezer": 420.0,
             "Notes": "",
-            "Links": "https://www.healthline.com/nutrition/how-long-do-apples-last#shelf-life"
+            "Links": "",
+        }
+        generic_item_set.insert_one(second_random_item)
+
+        ## Ask for Apple by name and IsCut = false
+        request = {
+            "Name": second_random_item["Name"],
+            "IsCut": second_random_item["IsCut"],
         }
         items = query_generic_item_parameterized(request)
-        self.assertEquals(items, [EXPECTED_APPLE_ITEM])
+        del second_random_item["_id"]
+        self.assertEquals(items, [second_random_item])
+
+        generic_item_set.delete_one(second_random_item)
 
     def test_query_generic_item_parameterized_subcategory(self):
-        ## Ask for Brussels Sprouts by name and subcategory 
-        request = {"Name": "Brussels Sprouts", "Subcategory": "On Stem"}
-        EXPECTED_BRUSSELS_SPROUTS_ITEM = {
-            "Name": "Brussels Sprouts",
+        second_random_item = {
+            "Name": "Random",
             "Category": "Produce",
-            "Subcategory": "On Stem",
-            "IsCut": False,
-            "DaysInFridge": 18.0,
-            "DaysOnShelf": 3.0,
+            "Subcategory": "Not Fresh",
+            "IsCut": True,
+            "DaysInFridge": 10.0,
+            "DaysOnShelf": 1000.0,
             "DaysInFreezer": 420.0,
             "Notes": "",
-            "Links": "http://www.eatbydate.com/vegetables/fresh-vegetables/how-long-do-brussels-sprouts-last/"
+            "Links": "",
+        }
+        generic_item_set.insert_one(second_random_item)
+
+        ## Ask for random item by name and subcategory
+        request = {
+            "Name": second_random_item["Name"],
+            "Subcategory": second_random_item["Subcategory"],
         }
 
         items = query_generic_item_parameterized(request)
-        self.assertEquals(items, [EXPECTED_BRUSSELS_SPROUTS_ITEM])
+        del second_random_item["_id"]
+        self.assertEquals(items, [second_random_item])
+
+        generic_item_set.delete_one(second_random_item)
 
     def test_add_generic_item(self):
-        ## Add random item 
-        random_item = {
-            "Name": "Random",
-            "Category": "Produce",
-            "Subcategory": "Fresh",
-            "IsCut": False,
-            "DaysInFridge": 10.0,
-            "DaysOnShelf": 0.0,
-            "DaysInFreezer": 420.0,
-            "Notes": "",
-            "Links": ""
-        }
-
-        result = add_generic_item(random_item)        
-        self.assertTrue(result)
-
-        ## Use query to find item 
+        ## Use query to find item
         filter = {"Name": "Random"}
-        items = generic_item_set.find_one(filter, {"_id": 0})
-        self.assertEquals(items, [random_item])
+        item = generic_item_set.find_one(filter)
 
-        ## Remove 
+        ## Assert info all there
+        for k, v in self.random_item.items():
+            self.assertIn(k, item.keys())
+            self.assertIn(v, item.values())
+
+        ## Remove
         result = generic_item_set.delete_one(filter)
         self.assertTrue(result.acknowledged)
-        
+
     def test_update_generic_item(self):
-        ## Add random item 
-        random_item = {
-            "Name": "Random",
-            "Category": "Produce",
-            "Subcategory": "Fresh",
-            "IsCut": False,
-            "DaysInFridge": 10.0,
-            "DaysOnShelf": 0.0,
-            "DaysInFreezer": 420.0,
-            "Notes": "",
-            "Links": ""
-        }
-        result = generic_item_set.insert_one(random_item)
-        self.assertTrue(result.acknowledged)
+        self.random_item["_id"] = self.inserted_id
+        filter = {"Name": self.random_item["Name"]}
 
-        random_item["_id"] = result.inserted_id
-        filter = {"Name": random_item["Name"]}
-
-        ## Ensure it is there 
+        ## Ensure it is there
         items = generic_item_set.find_one(filter)
-        self.assertEquals(items, [random_item]) 
+        self.assertEquals(items, self.random_item)
 
-        ## Update Category 
+        ## Update Category
         request = {"Category": "Drinks"}
         result = update_generic_item(filter, request)
         self.assertTrue(result)
-        
-        ## Ensure update exists 
-        items = generic_item_set.find_one(filter)
-        random_item["Category"] = "Drinks"
-        self.assertEquals(items, [random_item])
 
-        ## Remove 
+        ## Ensure update exists
+        items = generic_item_set.find_one(filter)
+        self.random_item["Category"] = "Drinks"
+        self.assertEquals(items, self.random_item)
+
+        ## Remove
         result = generic_item_set.delete_one(filter)
         self.assertTrue(result.acknowledged)
 
     def test_delete_generic_item(self):
-        ## Add random item 
+        self.random_item["_id"] = self.inserted_id
+        filter = {"Name": self.random_item["Name"]}
+
+        ## Ensure it is there
+        items = generic_item_set.find_one(filter)
+        self.assertEquals(items, self.random_item)
+
+        ## Delete
+        result = delete_generic_item(filter)
+        self.assertTrue(result)
+
+    def tearDown(self) -> None:
+        generic_item_set.delete_many({"Name": "Random"})
+
+
+class GenericItemListTests(unittest.TestCase):
+    def setUp(self) -> None:
+        ## Add random item
         random_item = {
             "Name": "Random",
             "Category": "Produce",
@@ -137,52 +173,65 @@ class GenericItemSetTests(unittest.TestCase):
             "DaysOnShelf": 0.0,
             "DaysInFreezer": 420.0,
             "Notes": "",
-            "Links": ""
+            "Links": "",
         }
-        result = generic_item_set.insert_one(random_item)
-        self.assertTrue(result.acknowledged)
+        generic_item_set.insert_one(random_item)
 
-        random_item["_id"] = result.inserted_id
-        filter = {"Name": random_item["Name"]}
+    def test_query_generic_item_names(self):
+        result = query_generic_item_names()
 
-        ## Ensure it is there 
-        items = generic_item_set.find_one(filter)
-        self.assertEquals(items, [random_item])
+        ## Ensure that we have result in
+        self.assertIn("Random", result)
 
-        ## Delete 
-        result = delete_generic_item(filter)
-        self.assertTrue(result)
+    def tearDown(self) -> None:
+        generic_item_set.delete_one({"Name": "Random"})
 
-class GenericItemListTests(unittest.TestCase):
-    def setUp(self) -> None:
-        pass 
-
-    def test_query_generic_item_names():
-        pass 
 
 class MatcheItemDictTests(unittest.TestCase):
     def setUp(self) -> None:
-        pass 
+        ## Add random item
+        self.random_item = {
+            "ScannedItemName": "Superior Random",
+            "GenericItemName": "Random",
+        }
 
-    def test_query_all_items():
-        pass 
+        matched_item_dict.insert_one(self.random_item)
 
-    def test_query_scanned_item_name():
-        pass 
+    def test_query_all_items(self):
+        result = query_all_items()
 
-    
+        ## Ensure we get the correct dictionary
+        self.assertIn(self.random_item["ScannedItemName"], result.keys())
+        self.assertIn(self.random_item["GenericItemName"], result.values())
 
+    def test_query_scanned_item_name(self):
+        result = query_scanned_item_name(self.random_item["ScannedItemName"])
+
+        ## Ensure correct generic name is returned
+        self.assertEqual(result, self.random_item["GenericItemName"])
+
+    def tearDown(self) -> None:
+        matched_item_dict.delete_one(self.random_item)
 
 
 def mongo_test_suite() -> unittest.TestSuite:
     suite = unittest.TestSuite()
     suite.addTest(GenericItemSetTests("test_query_generic_item_parameterized"))
     suite.addTest(GenericItemSetTests("test_query_generic_item_parameterized_iscut"))
-    suite.addTest(GenericItemSetTests("test_query_generic_item_parameterized_subcategory"))
+    suite.addTest(
+        GenericItemSetTests("test_query_generic_item_parameterized_subcategory")
+    )
     suite.addTest(GenericItemSetTests("test_add_generic_item"))
     suite.addTest(GenericItemSetTests("test_update_generic_item"))
     suite.addTest(GenericItemSetTests("test_delete_generic_item"))
-    return suite 
+
+    suite.addTest(GenericItemListTests("test_query_generic_item_names"))
+
+    suite.addTest(MatcheItemDictTests("test_query_all_items"))
+    suite.addTest(MatcheItemDictTests("test_query_scanned_item_name"))
+
+    return suite
+
 
 def run_mongo_tests():
     runner = unittest.TextTestRunner()

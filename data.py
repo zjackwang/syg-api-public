@@ -18,6 +18,7 @@ def format_returned_items(mongo_db_cursor):
     # ObjectID is not JSON Serializable
     return items
 
+
 ## Typings
 MongoObject = Dict[str, Any]
 
@@ -30,23 +31,35 @@ MongoObject = Dict[str, Any]
 generic_item_set = syg_data["GenericItemSet"]
 
 
+# Output: List of all dictionary generic items
 def query_all_generic_items():
-    return query_generic_items({})
+    return _query_generic_items({})
 
 
+# Input: Dictionary of attributes to query by
+# Output: List of items that match request
 def query_generic_item_parameterized(request):
-    return query_generic_items(request)
+    return _query_generic_items(request)
 
 
-def query_generic_items(request):
+# Input: Dictionary of attributes to query by
+# Output: List of items that matched the query
+def _query_generic_items(request):
     returned_generic_items = generic_item_set.find(request, {"_id": 0})
     generic_items = format_returned_items(returned_generic_items)
     return generic_items
 
 
+# Input: Dictionary or "MongoObject" filter for item to add
+# Output: Bool success or failure
 def add_generic_item(generic_item: MongoObject) -> bool:
     result = generic_item_set.insert_one(generic_item)
     return result.acknowledged
+
+
+# Input: Dictionary or "MongoObject" filter for item to update
+#        Dictionary or "MongoObject" filter of updated item
+# Output: Bool success or failure
 
 
 def update_generic_item(
@@ -59,11 +72,16 @@ def update_generic_item(
     return result.acknowledged
 
 
+# Input: Dictionary or "MongoObject" filter for item to delete
+# Output: Bool success or failure
 def delete_generic_item(generic_item_filter: MongoObject) -> bool:
     result = generic_item_set.delete_one(generic_item_filter)
+    return result
 
 
 ## GenericItemList
+
+# Output: List of generic item names
 def query_generic_item_names():
     returned_items = generic_item_set.find({}, {"_id": 0, "Name": True})
     generic_item_names = [item["Name"] for item in returned_items]
@@ -73,16 +91,20 @@ def query_generic_item_names():
 ## MatchedItemDict
 matched_item_dict = syg_data["MatchedItemDict"]
 
-
+# Output: Dictionary of k=Scanned item name, v=Generic item name
 def query_all_items():
     returned_items = matched_item_dict.find({}, {"_id": 0})
-    matchedItems = format_returned_items(returned_items)
-    return matchedItems
+    return_dict = {}
+    for item in returned_items:
+        return_dict[item["ScannedItemName"]] = item["GenericItemName"]
+
+    return return_dict
 
 
+# Input: String scanned item name
+# Output: String generic item name
 def query_scanned_item_name(scanned_item_name):
-    returned_item = matched_item_dict.find(
+    returned_item = matched_item_dict.find_one(
         {"ScannedItemName": scanned_item_name}, {"_id": 0, "ScannedItemName": 0}
     )
-    matched_item = [item["GenericItemName"] for item in returned_item]
-    return matched_item
+    return returned_item["GenericItemName"]
