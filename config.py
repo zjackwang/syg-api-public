@@ -9,5 +9,5 @@ load_dotenv(dotenv_path)
 mongo_key = os.getenv("MONGO_KEY")
 
 # API Keys
-api_key = os.getenv("PRIVATE_API_PUBLIC_KEY")
-secret_key = os.getenv("PRIVATE_API_SECRET_KEY")
+api_key = os.getenv("PUBLIC_API_PUBLIC_KEY")
+secret_key = os.getenv("PUBLIC_API_SECRET_KEY")

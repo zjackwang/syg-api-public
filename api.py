@@ -45,7 +45,7 @@ def abort_generic_item_doesnt_exist(generic_item_name, args):
     )
 
 
-def abort_invalid_args(args):
+def abort_invalid_parameters(args):
     invalid_args = [f"'{arg}': '{value}'" for arg, value in args.items()]
     invalid_args = ", ".join(invalid_args)
     abort(
@@ -56,13 +56,13 @@ def abort_invalid_args(args):
 
 def abort_invalid_bool_string(bool_str, args):
     if bool_str not in BOOL_TRUE_LIST and bool_str not in BOOL_FALSE_LIST:
-        abort_invalid_args(args)
+        abort_invalid_parameters(args)
 
 
 def abort_if_errant_parameter(args):
     for arg in args:
         if arg not in VALID_FORM_PARAMETERS:
-            abort_invalid_args(args)
+            abort_invalid_parameters(args)
 
 
 def abort_matched_item_doesnt_exist(scanned_item_name):
@@ -98,7 +98,6 @@ def validate_headers():
     generated_hmac_sig = str(
         hmac.digest(key=secret_key.encode(), msg=data, digest=hashlib.sha256)
     )
-    print(f"GENERATED HMAC: {generated_hmac_sig}")
 
     if not hmac.compare_digest(received_hmac_sig, generated_hmac_sig):
         abort_invalid_hmac_signature()
@@ -198,9 +197,6 @@ class MatchedItemDict(Resource):
             abort_matched_item_doesnt_exist(scanned_item_name)
         return matched_item
 
-class Example(Resource):
-    def get(self):
-        return {"content": "Hello World!"}
 
 ##
 ## Api resource routing
@@ -209,7 +205,6 @@ api.add_resource(GenericItem, "/genericitem/<generic_item_name>")
 api.add_resource(GenericItemSet, "/genericitemset")
 api.add_resource(GenericItemList, "/genericitemlist")
 api.add_resource(MatchedItemDict, "/matcheditemdict/<scanned_item_name>")
-api.add_resource(Example, "/")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()

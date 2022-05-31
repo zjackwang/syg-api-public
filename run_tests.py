@@ -1,5 +1,5 @@
-from tests_private_api.tests_http_requests.test_client import run_local_api_tests, run_remote_api_tests
-from tests_private_api.tests_mongo_queries.test_mongo import run_mongo_tests
+from tests_public_api.tests_http_requests.test_client import run_local_api_tests, run_remote_api_tests
+from tests_public_api.tests_mongo_queries.test_mongo import run_mongo_tests
 
 
 if __name__ == "__main__":

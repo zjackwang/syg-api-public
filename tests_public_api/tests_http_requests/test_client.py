@@ -1,5 +1,5 @@
 """
-Fires off http requests to private api and tests return code
+Fires off http requests to public api and tests return code
  
 """
 
@@ -37,7 +37,6 @@ def make_keyed_get_request(payload, url) -> requests.Response:
 
 def make_keyed_post_request(payload, url) -> requests.Response:
     hmac_sig = str(generate_hmac_signature(payload, secret_key))
-    print(hmac_sig)
     return requests.post(
         url,
         data=payload,
@@ -67,7 +66,7 @@ MATCHED_ITEM_DICT_REMOTE = (
 )
 
 
-class PrivateLocalAPITests(unittest.TestCase):
+class PublicLocalAPITests(unittest.TestCase):
     def setUp(self) -> None:
         self.api = run_local_api()
         sleep(1)
@@ -75,7 +74,7 @@ class PrivateLocalAPITests(unittest.TestCase):
     def test_generic_item_get(self):
         payload = GENERIC_ITEM_URL_LOCAL
         response = make_keyed_get_request(payload, GENERIC_ITEM_URL_LOCAL)
-        failure_msg = f"Request failed. Response: {response.content}"
+        failure_msg = f"Request failed. Response: {response}"
         self.assertEqual(
             response.status_code,
             200,
@@ -128,7 +127,6 @@ class PrivateLocalAPITests(unittest.TestCase):
     def test_matched_item_dict_get(self):
         payload = MATCHED_ITEM_DICT_LOCAL
         response = make_keyed_get_request(payload, MATCHED_ITEM_DICT_LOCAL)
-        print(response.reason)
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
             response.status_code,
@@ -142,7 +140,7 @@ class PrivateLocalAPITests(unittest.TestCase):
         print(self.api.poll())
 
 
-class PrivateRemoteAPITests(unittest.TestCase):
+class PublicRemoteAPITests(unittest.TestCase):
     def setUp(self) -> None:
         pass
 
@@ -215,23 +213,23 @@ class PrivateRemoteAPITests(unittest.TestCase):
 
 def test_suite_local_api():
     suite = unittest.TestSuite()
-    suite.addTest(PrivateLocalAPITests("test_generic_item_get"))
-    suite.addTest(PrivateLocalAPITests("test_generic_item_post"))
-    suite.addTest(PrivateLocalAPITests("test_generic_item_subcategory_post"))
-    suite.addTest(PrivateLocalAPITests("test_generic_item_set_get"))
-    suite.addTest(PrivateLocalAPITests("test_generic_item_list_get"))
-    suite.addTest(PrivateLocalAPITests("test_matched_item_dict_get"))
+    suite.addTest(PublicLocalAPITests("test_generic_item_get"))
+    suite.addTest(PublicLocalAPITests("test_generic_item_post"))
+    suite.addTest(PublicLocalAPITests("test_generic_item_subcategory_post"))
+    suite.addTest(PublicLocalAPITests("test_generic_item_set_get"))
+    suite.addTest(PublicLocalAPITests("test_generic_item_list_get"))
+    suite.addTest(PublicLocalAPITests("test_matched_item_dict_get"))
     return suite
 
 
 def test_suite_remote_api():
     suite = unittest.TestSuite()
-    suite.addTest(PrivateRemoteAPITests("test_generic_item_get"))
-    suite.addTest(PrivateRemoteAPITests("test_generic_item_post"))
-    suite.addTest(PrivateRemoteAPITests("test_generic_item_subcategory_post"))
-    suite.addTest(PrivateRemoteAPITests("test_generic_item_set_get"))
-    suite.addTest(PrivateRemoteAPITests("test_generic_item_list_get"))
-    suite.addTest(PrivateRemoteAPITests("test_matched_item_dict_get"))
+    suite.addTest(PublicRemoteAPITests("test_generic_item_get"))
+    suite.addTest(PublicRemoteAPITests("test_generic_item_post"))
+    suite.addTest(PublicRemoteAPITests("test_generic_item_subcategory_post"))
+    suite.addTest(PublicRemoteAPITests("test_generic_item_set_get"))
+    suite.addTest(PublicRemoteAPITests("test_generic_item_list_get"))
+    suite.addTest(PublicRemoteAPITests("test_matched_item_dict_get"))
     return suite
 
 
