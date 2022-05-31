@@ -5,6 +5,7 @@ Fires off http requests to public api and tests return code
 
 from time import sleep
 import requests
+from requests import Timeout
 import unittest
 import subprocess
 
@@ -25,24 +26,35 @@ def stop_local_api(api: subprocess.Popen):
 ##
 ## Secured requests w/ hmac sig and api key
 ##
-def make_keyed_get_request(payload, url) -> requests.Response:
+def make_keyed_get_request(payload, url, timeout=5.0) -> requests.Response:
     hmac_sig = str(generate_hmac_signature(payload, secret_key))
 
-    return requests.get(
-        url,
-        data=payload,
-        headers={"X-Syg-Api-Key": api_key, "X-HMAC-Signature": hmac_sig},
-    )
+    try:
+        response = requests.get(
+            url,
+            data=payload,
+            headers={"X-Syg-Api-Key": api_key, "X-HMAC-Signature": hmac_sig},
+            timeout=timeout
+        )
+    except Timeout:
+        raise Timeout 
+    
+    return response 
 
-
-def make_keyed_post_request(payload, url) -> requests.Response:
+def make_keyed_post_request(payload, url, timeout=5.0) -> requests.Response:
     hmac_sig = str(generate_hmac_signature(payload, secret_key))
-    return requests.post(
-        url,
-        data=payload,
-        headers={"X-Syg-Api-Key": api_key, "X-HMAC-Signature": hmac_sig},
-    )
-
+    
+    try:
+        response = requests.post(
+            url,
+            data=payload,
+            headers={"X-Syg-Api-Key": api_key, "X-HMAC-Signature": hmac_sig},
+            timeout=timeout
+        )
+    except Timeout:
+        raise Timeout
+    
+    return response 
 ##
 ## Endpoints
 ##
@@ -73,7 +85,12 @@ class PublicLocalAPITests(unittest.TestCase):
 
     def test_generic_item_get(self):
         payload = GENERIC_ITEM_URL_LOCAL
-        response = make_keyed_get_request(payload, GENERIC_ITEM_URL_LOCAL)
+
+        try: 
+            response = make_keyed_get_request(payload, GENERIC_ITEM_URL_LOCAL)
+        except Timeout:
+            self.fail(f"Request timed out")
+
         failure_msg = f"Request failed. Response: {response}"
         self.assertEqual(
             response.status_code,
@@ -83,7 +100,11 @@ class PublicLocalAPITests(unittest.TestCase):
 
     def test_generic_item_post(self):
         payload = "IsCut=True"
-        response = make_keyed_post_request(payload, GENERIC_ITEM_URL_LOCAL)
+
+        try:
+            response = make_keyed_post_request(payload, GENERIC_ITEM_URL_LOCAL)
+        except Timeout:
+            self.fail(f"Request timed out")
 
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
@@ -94,7 +115,11 @@ class PublicLocalAPITests(unittest.TestCase):
 
     def test_generic_item_subcategory_post(self):
         payload = "Subcategory=On Stem"
-        response = make_keyed_post_request(payload, GENERIC_ITEM_SUBCATEGORY_LOCAL)
+
+        try:
+            response = make_keyed_post_request(payload, GENERIC_ITEM_SUBCATEGORY_LOCAL)
+        except Timeout:
+            self.fail(f"Request timed out")
 
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
@@ -105,7 +130,11 @@ class PublicLocalAPITests(unittest.TestCase):
 
     def test_generic_item_set_get(self):
         payload = GENERIC_ITEM_SET_LOCAL
-        response = make_keyed_get_request(payload, GENERIC_ITEM_SET_LOCAL)
+
+        try:
+            response = make_keyed_get_request(payload, GENERIC_ITEM_SET_LOCAL)
+        except Timeout:
+            self.fail(f"Request timed out")
 
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
@@ -116,7 +145,12 @@ class PublicLocalAPITests(unittest.TestCase):
 
     def test_generic_item_list_get(self):
         payload = GENERIC_ITEM_LIST_LOCAL
-        response = make_keyed_get_request(payload, GENERIC_ITEM_LIST_LOCAL)
+
+        try: 
+            response = make_keyed_get_request(payload, GENERIC_ITEM_LIST_LOCAL)
+        except Timeout:
+            self.fail(f"Request timed out")
+
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
             response.status_code,
@@ -126,7 +160,12 @@ class PublicLocalAPITests(unittest.TestCase):
 
     def test_matched_item_dict_get(self):
         payload = MATCHED_ITEM_DICT_LOCAL
-        response = make_keyed_get_request(payload, MATCHED_ITEM_DICT_LOCAL)
+
+        try:
+            response = make_keyed_get_request(payload, MATCHED_ITEM_DICT_LOCAL)
+        except Timeout:
+            self.fail(f"Request timed out")
+
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
             response.status_code,
@@ -146,7 +185,11 @@ class PublicRemoteAPITests(unittest.TestCase):
 
     def test_generic_item_get(self):
         payload = GENERIC_ITEM_URL_REMOTE
-        response = make_keyed_get_request(payload, GENERIC_ITEM_URL_REMOTE)
+        try:
+            response = make_keyed_get_request(payload, GENERIC_ITEM_URL_REMOTE)
+        except Timeout:
+            self.fail(f"Request timed out")
+
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
             response.status_code,
@@ -156,7 +199,11 @@ class PublicRemoteAPITests(unittest.TestCase):
 
     def test_generic_item_post(self):
         payload = "IsCut=True"
-        response = make_keyed_post_request(payload, GENERIC_ITEM_URL_REMOTE)
+
+        try:
+            response = make_keyed_post_request(payload, GENERIC_ITEM_URL_REMOTE)
+        except Timeout:
+            self.fail(f"Request timed out")
 
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
@@ -167,7 +214,11 @@ class PublicRemoteAPITests(unittest.TestCase):
 
     def test_generic_item_subcategory_post(self):
         payload = "Subcategory=On Stem"
-        response = make_keyed_post_request(payload, GENERIC_ITEM_SUBCATEGORY_REMOTE)
+
+        try:
+            response = make_keyed_post_request(payload, GENERIC_ITEM_SUBCATEGORY_REMOTE)
+        except Timeout:
+            self.fail(f"Request timed out")
 
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
@@ -178,7 +229,11 @@ class PublicRemoteAPITests(unittest.TestCase):
 
     def test_generic_item_set_get(self):
         payload = GENERIC_ITEM_SET_REMOTE
-        response = make_keyed_get_request(payload, GENERIC_ITEM_SET_REMOTE)
+
+        try:
+            response = make_keyed_get_request(payload, GENERIC_ITEM_SET_REMOTE)
+        except Timeout:
+            self.fail(f"Request timed out")
 
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
@@ -189,7 +244,12 @@ class PublicRemoteAPITests(unittest.TestCase):
 
     def test_generic_item_list_get(self):
         payload = GENERIC_ITEM_LIST_REMOTE
-        response = make_keyed_get_request(payload, GENERIC_ITEM_LIST_REMOTE)
+
+        try:
+            response = make_keyed_get_request(payload, GENERIC_ITEM_LIST_REMOTE)
+        except Timeout:
+            self.fail(f"Request timed out")
+
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
             response.status_code,
@@ -199,7 +259,12 @@ class PublicRemoteAPITests(unittest.TestCase):
 
     def test_matched_item_dict_get(self):
         payload = MATCHED_ITEM_DICT_REMOTE
-        response = make_keyed_get_request(payload, MATCHED_ITEM_DICT_REMOTE)
+        
+        try:
+            response = make_keyed_get_request(payload, MATCHED_ITEM_DICT_REMOTE)
+        except Timeout:
+            self.fail(f"Request timed out")
+            
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
             response.status_code,
