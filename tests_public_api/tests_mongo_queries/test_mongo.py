@@ -4,7 +4,6 @@ Queries, adds, deletes, and updates collection(s) in MongoDB
 """
 
 from random import random
-import re
 import unittest
 
 from data import *
