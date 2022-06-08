@@ -27,7 +27,7 @@ def stop_local_api(api: subprocess.Popen):
 ## Secured requests w/ hmac sig and api key
 ##
 def make_keyed_get_request(payload, url, timeout=5.0) -> requests.Response:
-    hmac_sig = str(generate_hmac_signature(payload, secret_key))
+    hmac_sig = generate_hmac_signature(payload, secret_key).hex()
 
     try:
         response = requests.get(
@@ -42,7 +42,7 @@ def make_keyed_get_request(payload, url, timeout=5.0) -> requests.Response:
     return response 
 
 def make_keyed_post_request(payload, url, timeout=5.0) -> requests.Response:
-    hmac_sig = str(generate_hmac_signature(payload, secret_key))
+    hmac_sig = generate_hmac_signature(payload, secret_key).hex()
     
     try:
         response = requests.post(
@@ -128,11 +128,11 @@ class PublicLocalAPITests(unittest.TestCase):
             msg=failure_msg,
         )
 
-    def test_generic_item_set_get(self):
+    def test_generic_item_set_post(self):
         payload = GENERIC_ITEM_SET_LOCAL
 
         try:
-            response = make_keyed_get_request(payload, GENERIC_ITEM_SET_LOCAL)
+            response = make_keyed_post_request(payload, GENERIC_ITEM_SET_LOCAL)
         except Timeout:
             self.fail(f"Request timed out")
 
@@ -143,11 +143,11 @@ class PublicLocalAPITests(unittest.TestCase):
             msg=failure_msg,
         )
 
-    def test_generic_item_list_get(self):
+    def test_generic_item_list_post(self):
         payload = GENERIC_ITEM_LIST_LOCAL
 
         try: 
-            response = make_keyed_get_request(payload, GENERIC_ITEM_LIST_LOCAL)
+            response = make_keyed_post_request(payload, GENERIC_ITEM_LIST_LOCAL)
         except Timeout:
             self.fail(f"Request timed out")
 
@@ -158,11 +158,11 @@ class PublicLocalAPITests(unittest.TestCase):
             msg=failure_msg,
         )
 
-    def test_matched_item_dict_get(self):
+    def test_matched_item_dict_post(self):
         payload = MATCHED_ITEM_DICT_LOCAL
 
         try:
-            response = make_keyed_get_request(payload, MATCHED_ITEM_DICT_LOCAL)
+            response = make_keyed_post_request(payload, MATCHED_ITEM_DICT_LOCAL)
         except Timeout:
             self.fail(f"Request timed out")
 
@@ -183,10 +183,10 @@ class PublicRemoteAPITests(unittest.TestCase):
     def setUp(self) -> None:
         pass
 
-    def test_generic_item_get(self):
+    def test_generic_item_post(self):
         payload = GENERIC_ITEM_URL_REMOTE
         try:
-            response = make_keyed_get_request(payload, GENERIC_ITEM_URL_REMOTE)
+            response = make_keyed_post_request(payload, GENERIC_ITEM_URL_REMOTE)
         except Timeout:
             self.fail(f"Request timed out")
 
@@ -227,11 +227,11 @@ class PublicRemoteAPITests(unittest.TestCase):
             msg=failure_msg,
         )
 
-    def test_generic_item_set_get(self):
+    def test_generic_item_set_post(self):
         payload = GENERIC_ITEM_SET_REMOTE
 
         try:
-            response = make_keyed_get_request(payload, GENERIC_ITEM_SET_REMOTE)
+            response = make_keyed_post_request(payload, GENERIC_ITEM_SET_REMOTE)
         except Timeout:
             self.fail(f"Request timed out")
 
@@ -242,11 +242,11 @@ class PublicRemoteAPITests(unittest.TestCase):
             msg=failure_msg,
         )
 
-    def test_generic_item_list_get(self):
+    def test_generic_item_list_post(self):
         payload = GENERIC_ITEM_LIST_REMOTE
 
         try:
-            response = make_keyed_get_request(payload, GENERIC_ITEM_LIST_REMOTE)
+            response = make_keyed_post_request(payload, GENERIC_ITEM_LIST_REMOTE)
         except Timeout:
             self.fail(f"Request timed out")
 
@@ -257,11 +257,11 @@ class PublicRemoteAPITests(unittest.TestCase):
             msg=failure_msg,
         )
 
-    def test_matched_item_dict_get(self):
+    def test_matched_item_dict_post(self):
         payload = MATCHED_ITEM_DICT_REMOTE
         
         try:
-            response = make_keyed_get_request(payload, MATCHED_ITEM_DICT_REMOTE)
+            response = make_keyed_post_request(payload, MATCHED_ITEM_DICT_REMOTE)
         except Timeout:
             self.fail(f"Request timed out")
             
@@ -281,9 +281,9 @@ def test_suite_local_api():
     suite.addTest(PublicLocalAPITests("test_generic_item_get"))
     suite.addTest(PublicLocalAPITests("test_generic_item_post"))
     suite.addTest(PublicLocalAPITests("test_generic_item_subcategory_post"))
-    suite.addTest(PublicLocalAPITests("test_generic_item_set_get"))
-    suite.addTest(PublicLocalAPITests("test_generic_item_list_get"))
-    suite.addTest(PublicLocalAPITests("test_matched_item_dict_get"))
+    suite.addTest(PublicLocalAPITests("test_generic_item_set_post"))
+    suite.addTest(PublicLocalAPITests("test_generic_item_list_post"))
+    suite.addTest(PublicLocalAPITests("test_matched_item_dict_post"))
     return suite
 
 
@@ -292,9 +292,9 @@ def test_suite_remote_api():
     suite.addTest(PublicRemoteAPITests("test_generic_item_get"))
     suite.addTest(PublicRemoteAPITests("test_generic_item_post"))
     suite.addTest(PublicRemoteAPITests("test_generic_item_subcategory_post"))
-    suite.addTest(PublicRemoteAPITests("test_generic_item_set_get"))
-    suite.addTest(PublicRemoteAPITests("test_generic_item_list_get"))
-    suite.addTest(PublicRemoteAPITests("test_matched_item_dict_get"))
+    suite.addTest(PublicRemoteAPITests("test_generic_item_set_post"))
+    suite.addTest(PublicRemoteAPITests("test_generic_item_list_post"))
+    suite.addTest(PublicRemoteAPITests("test_matched_item_dict_post"))
     return suite
 
 
