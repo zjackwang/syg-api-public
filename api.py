@@ -89,17 +89,14 @@ def abort_invalid_hmac_signature():
 
 def validate_headers():
     headers = request.headers
-    data = request.get_data()
-    print(data)
-    print(request.form)
-
     ## Validate hmac signature given api key
     received_api_key = headers["X-Syg-Api-Key"]
     received_hmac_sig = headers["X-Hmac-Signature"]
+    received_hmac_msg = headers["X-Hmac-Message"]
 
     if received_api_key != api_key:
         abort_incorrect_api_key(received_api_key)
-    generated_hmac_sig = hmac.digest(key=secret_key.encode(), msg=data, digest=hashlib.sha256).hex()
+    generated_hmac_sig = hmac.digest(key=secret_key.encode(), msg=received_hmac_msg.encode(), digest=hashlib.sha256).hex()
     
 
     if not hmac.compare_digest(received_hmac_sig, generated_hmac_sig):
@@ -180,20 +177,20 @@ class GenericItem(Resource):
 
 
 class GenericItemSet(Resource):
-    def post(self):
+    def get(self):
         validate_headers()
         return query_all_generic_items()
 
 
 class GenericItemList(Resource):
-    def post(self):
+    def get(self):
         validate_headers()
         matched_items = query_generic_item_names()
         return matched_items
 
 
 class MatchedItemDict(Resource):
-    def post(self, scanned_item_name):
+    def get(self, scanned_item_name):
         validate_headers()
         matched_item = query_scanned_item_name(scanned_item_name)
         if len(matched_item) == 0:

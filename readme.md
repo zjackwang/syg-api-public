@@ -3,6 +3,7 @@
 ### Required HTTP Request Headers 
 1. X-Syg-Api-Key: Public key assigned to client 
 2. X-Hmac-Signature: HMAC signature generated from request payload and client's private key 
+3. X-Hmac-Message: String message used to generated hmac signature
 
 ### Endpoints 
 #### /genericitem/<generic_item_name>
