@@ -1,3 +1,4 @@
+from nis import match
 from flask import Flask, request
 from flask_restful import abort, Api, Resource
 
@@ -193,7 +194,7 @@ class MatchedItemDict(Resource):
     def get(self, scanned_item_name):
         validate_headers()
         matched_item = query_scanned_item_name(scanned_item_name)
-        if len(matched_item) == 0:
+        if matched_item == None:
             abort_matched_item_doesnt_exist(scanned_item_name)
         return matched_item
 
