@@ -105,25 +105,38 @@ def query_generic_item_names():
 """
 Output: Dictionary of k=Scanned item name, v=Generic item name
 """
-def query_all_items() -> MongoObject:
-    returned_items = matched_item_dict.find({}, {"_id": 0})
-    return_dict = {}
-    for item in returned_items:
-        return_dict[item["ScannedItemName"]] = item["GenericItemName"]
+# def query_all_items() -> MongoObject:
+#     returned_items = matched_item_dict.find({}, {"_id": 0})
+#     return_dict = {}
+#     for item in returned_items:
+#         return_dict[item["ScannedItemName"]] = item["GenericItemName"]
 
-    return return_dict
+#     return return_dict
+
+"""
+Input: String scanned item name
+Output: ObjectID generic item MongoDB ID
+"""
+def query_generic_item_id(scanned_item_name: str):
+    returned_item = matched_item_dict.find_one({
+        "ScannedItemName": scanned_item_name
+    })
+    if returned_item == None:
+        return None 
+    return returned_item["GenericItemID"]
+
 
 """
 Input: String scanned item name
 Output: String generic item name
 """
-def query_scanned_item_name(scanned_item_name: str):
-    returned_item = matched_item_dict.find_one(
-        {"ScannedItemName": scanned_item_name}, {"_id": 0, "ScannedItemName": 0}
-    )
-    if returned_item == None:
-        return None 
-    return returned_item["GenericItemName"]
+# def query_scanned_item_name(scanned_item_name: str):
+#     returned_item = matched_item_dict.find_one(
+#         {"ScannedItemName": scanned_item_name}, {"_id": 0, "ScannedItemName": 0}
+#     )
+#     if returned_item == None:
+#         return None 
+#     return returned_item["GenericItemName"]
 
 
 ## User Submitted Generic Item Set

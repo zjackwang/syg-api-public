@@ -10,21 +10,23 @@
 ~~GET~~
 ~~- queries specific generic item that match "generic_item_name" ~~
 POST 
-- parameterized query for generic items that match given "generic_item_name" and form params
-- form params: 
-   - IsCut : Bool
-   - IsCooked : Bool
-   - IsOpened : Bool
-   - Subcategory : String 
+- parameterized query for generic items that match given "generic_item_name" and JSON params
+- JSON params: 
+   - isCut : Bool
+   - isCooked : Bool
+   - isOpened : Bool
+   - subcategory : String 
 #### /genericitemset
 GET 
 - returns all generic items 
 #### /genericitemlist
 GET 
 - returns all generic item names 
-#### /matcheditemdict/<scanned_item_name>
-GET
-- returns matched generic item given scanned_item_name or returns 404 doesn't exist if so
+#### /matcheditemdict
+POST
+- returns matched generic item  or returns 404 doesn't exist if so
+- JSON params:
+   - scanned_item_name: String 
 
 ### Running API tests from root dir 
 

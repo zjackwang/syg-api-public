@@ -10,7 +10,7 @@ from data import (
     query_all_generic_items,
     query_generic_item_parameterized,
     query_generic_item_names,
-    query_scanned_item_name,
+    query_generic_item_id,
 )
 
 from config import api_key, secret_key
@@ -209,10 +209,15 @@ class MatchedItemDict(Resource):
         abort_if_wrong_matcheditem_parms(args)
         scanned_item_name = args["scannedItemName"]
 
-        matched_item = query_scanned_item_name(scanned_item_name)
-        if matched_item == None:
+        matched_item_id = query_generic_item_id(scanned_item_name)
+        if matched_item_id == None:
             abort_matched_item_doesnt_exist(scanned_item_name)
-        return matched_item
+        
+        generic_item = query_generic_item_parameterized({
+            "_id" : matched_item_id
+        })
+
+        return generic_item
 
 
 
