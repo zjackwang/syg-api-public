@@ -7,8 +7,8 @@
 
 ### Endpoints 
 #### /genericitem/<generic_item_name>
-GET
-- queries specific generic item that match "generic_item_name" 
+~~GET~~
+~~- queries specific generic item that match "generic_item_name" ~~
 POST 
 - parameterized query for generic items that match given "generic_item_name" and form params
 - form params: 

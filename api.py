@@ -1,4 +1,5 @@
 from nis import match
+from wsgiref import validate
 from flask import Flask, request
 from flask_restful import abort, Api, Resource
 
@@ -21,19 +22,30 @@ api = Api(app)
 ## Setup arguments
 ##
 
-NAME = "Name"
-ISCUT = "IsCut"
-ISCOOKED = "IsCooked"
-ISOPENED = "IsOpened"
-SUBCATEGORY = "Subcategory"
+NAME = "name"
+ISCUT = "isCut"
+ISCOOKED = "isCooked"
+ISOPENED = "isOpened"
+SUBCATEGORY = "subcategory"
+
 BOOL_TRUE_LIST = ["True", "true"]
 BOOL_FALSE_LIST = ["False", "false"]
 
-VALID_FORM_PARAMETERS = {ISCUT, ISCOOKED, ISOPENED, SUBCATEGORY}
-VALID_FORM_PARAMETERS_MESSAGE = (
-    "IsCut=<Bool>, IsCooked=<Bool>, IsOpened=<Bool>, SubCategory=<Str>"
+
+VALID_GENERICITEM_PARAMETER_TYPES = {
+    ISCUT: bool,
+    ISCOOKED: bool,
+    ISOPENED: bool, 
+    SUBCATEGORY: str 
+}
+VALID_GENERICITEM_PARAMETERS_MESSAGE = (
+    "isCut:<Bool>, isCooked:<Bool>, isOpened:<Bool>, subCategory:<Str>"
 )
 
+VALID_MATCHEDITEM_PARAMETERS_MESSAGE = "scannedItemName:<Str>"
+VALID_MATCHEDITEM_PARAMETER_TYPES = {
+    "scannedItemName": str 
+}
 ##
 ## Abort conditions
 ##
@@ -45,26 +57,28 @@ def abort_generic_item_doesnt_exist(generic_item_name, args):
         message=f"Generic item '{generic_item_name}' with these args:{args}...doesn't exist",
     )
 
-
-def abort_invalid_parameters(args):
+def abort_invalid_parameters(args, valid_args):
     invalid_args = [f"'{arg}': '{value}'" for arg, value in args.items()]
     invalid_args = ", ".join(invalid_args)
     abort(
         400,
-        message=f"Invalid args: {invalid_args}... Valid Parameters: {VALID_FORM_PARAMETERS_MESSAGE}",
+        message=f"Invalid args: {invalid_args}... Valid Parameters: {valid_args}",
     )
 
+def abort_if_wrong_genericitem_params(args):
+    for arg, val in args.items(): 
+        if arg not in VALID_GENERICITEM_PARAMETER_TYPES.keys():
+            abort_invalid_parameters(args, VALID_GENERICITEM_PARAMETERS_MESSAGE)
+        if type(val) != VALID_GENERICITEM_PARAMETER_TYPES[arg]:
+            abort_invalid_parameters(args, VALID_GENERICITEM_PARAMETERS_MESSAGE)
 
-def abort_invalid_bool_string(bool_str, args):
-    if bool_str not in BOOL_TRUE_LIST and bool_str not in BOOL_FALSE_LIST:
-        abort_invalid_parameters(args)
+def abort_if_wrong_matcheditem_parms(args):
+    if args.keys() != VALID_MATCHEDITEM_PARAMETER_TYPES.keys():
+        abort_invalid_parameters(args, VALID_MATCHEDITEM_PARAMETERS_MESSAGE)
 
-
-def abort_if_errant_parameter(args):
     for arg in args:
-        if arg not in VALID_FORM_PARAMETERS:
-            abort_invalid_parameters(args)
-
+        if type(arg) != VALID_MATCHEDITEM_PARAMETER_TYPES[arg]:
+            abort_invalid_parameters(args, VALID_MATCHEDITEM_PARAMETERS_MESSAGE)
 
 def abort_matched_item_doesnt_exist(scanned_item_name):
     abort(
@@ -133,42 +147,39 @@ Argument Handling
 
 
 class GenericItem(Resource):
-    def get(self, generic_item_name):
-        validate_headers()
-        mongo_request = {NAME: generic_item_name}
+    # def get(self, generic_item_name):
+    #     validate_headers()
+    #     mongo_request = {NAME: generic_item_name}
 
-        returned_items = query_generic_item_parameterized(mongo_request)
-        if len(returned_items) == 0:
-            abort_generic_item_doesnt_exist(generic_item_name, {})
+    #     returned_items = query_generic_item_parameterized(mongo_request)
+    #     if len(returned_items) == 0:
+    #         abort_generic_item_doesnt_exist(generic_item_name, {})
 
-        return returned_items
+    #     return returned_items
 
     def post(self, generic_item_name):
         validate_headers()
-        args = request.form
-        abort_if_errant_parameter(args)
-        mongo_request = {NAME: generic_item_name}
+        args = request.json
+        abort_if_wrong_genericitem_params(args)
+        mongo_request = {'Name': generic_item_name}
 
         ## Retrieve parameters and validate
-        is_cut = args.get(ISCUT, default=None)
-        is_cooked = args.get(ISCOOKED, default=None)
-        is_opened = args.get(ISOPENED, default=None)
-        subcategory = args.get(SUBCATEGORY, default=None)
+        is_cut = args.get(ISCUT, None)
+        is_cooked = args.get(ISCOOKED, None)
+        is_opened = args.get(ISOPENED, None)
+        subcategory = args.get(SUBCATEGORY, None)
 
         if is_cut != None:
-            abort_invalid_bool_string(is_cut, args)
-            mongo_request[ISCUT] = True if is_cut in BOOL_TRUE_LIST else False
+            mongo_request['IsCut'] = args[ISCUT]
 
         if is_cooked != None:
-            abort_invalid_bool_string(is_cooked, args)
-            mongo_request[ISCOOKED] = args[ISCOOKED]
+            mongo_request['IsCooked'] = args[ISCOOKED]
 
         if is_opened != None:
-            abort_invalid_bool_string(is_opened, args)
-            mongo_request[ISOPENED] = args[ISOPENED]
+            mongo_request['IsOpened'] = args[ISOPENED]
 
         if subcategory != None:
-            mongo_request[SUBCATEGORY] = args[SUBCATEGORY]
+            mongo_request['Subcategory'] = args[SUBCATEGORY]
 
         returned_items = query_generic_item_parameterized(mongo_request)
         if len(returned_items) == 0:
@@ -191,12 +202,18 @@ class GenericItemList(Resource):
 
 
 class MatchedItemDict(Resource):
-    def get(self, scanned_item_name):
+    def post(self):
         validate_headers()
+        
+        args = request.json
+        abort_if_wrong_matcheditem_parms(args)
+        scanned_item_name = args["scannedItemName"]
+
         matched_item = query_scanned_item_name(scanned_item_name)
         if matched_item == None:
             abort_matched_item_doesnt_exist(scanned_item_name)
         return matched_item
+
 
 
 ##
@@ -205,7 +222,8 @@ class MatchedItemDict(Resource):
 api.add_resource(GenericItem, "/genericitem/<generic_item_name>")
 api.add_resource(GenericItemSet, "/genericitemset")
 api.add_resource(GenericItemList, "/genericitemlist")
-api.add_resource(MatchedItemDict, "/matcheditemdict/<scanned_item_name>")
+api.add_resource(MatchedItemDict, "/matcheditemdict")
+
 
 if __name__ == "__main__":
     app.run()

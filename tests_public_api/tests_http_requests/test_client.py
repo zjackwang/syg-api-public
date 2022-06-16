@@ -41,14 +41,14 @@ def make_keyed_get_request(message, url, timeout=5.0) -> requests.Response:
     return response 
 
 def make_keyed_post_request(payload, url, timeout=5.0) -> requests.Response:
-    # Payload is also message 
-    hmac_sig = generate_hmac_signature(payload, secret_key).hex()
+    message = "I still feel twenty-five, most of the time"
+    hmac_sig = generate_hmac_signature(message, secret_key).hex()
     
     try:
         response = requests.post(
             url,
-            data=payload,
-            headers={"X-Syg-Api-Key": api_key, "X-Hmac-Signature": hmac_sig, "X-Hmac-Message": payload},
+            json=payload,
+            headers={"X-Syg-Api-Key": api_key, "X-Hmac-Signature": hmac_sig, "X-Hmac-Message": message},
             timeout=timeout
         )
     except Timeout:
@@ -64,7 +64,7 @@ GENERIC_ITEM_URL_LOCAL = "http://localhost:5000/genericitem/Apple"
 GENERIC_ITEM_SUBCATEGORY_LOCAL = "http://localhost:5000/genericitem/Brussels%20Sprouts"
 GENERIC_ITEM_SET_LOCAL = "http://localhost:5000/genericitemset"
 GENERIC_ITEM_LIST_LOCAL = "http://localhost:5000/genericitemlist"
-MATCHED_ITEM_DICT_LOCAL = "http://localhost:5000/matcheditemdict/Premium%20Bananas"
+MATCHED_ITEM_DICT_LOCAL = "http://localhost:5000/matcheditemdict"
 
 ## Remote endpoints
 GENERIC_ITEM_URL_REMOTE = "https://api-syg.herokuapp.com/genericitem/Apple"
@@ -73,9 +73,8 @@ GENERIC_ITEM_SUBCATEGORY_REMOTE = (
 )
 GENERIC_ITEM_SET_REMOTE = "https://api-syg.herokuapp.com/genericitemset"
 GENERIC_ITEM_LIST_REMOTE = "https://api-syg.herokuapp.com/genericitemlist"
-MATCHED_ITEM_DICT_REMOTE = (
-    "https://api-syg.herokuapp.com/matcheditemdict/Premium%20Bananas"
-)
+MATCHED_ITEM_DICT_REMOTE = "https://api-syg.herokuapp.com/matcheditemdict"
+
 
 
 class PublicLocalAPITests(unittest.TestCase):
@@ -99,7 +98,7 @@ class PublicLocalAPITests(unittest.TestCase):
         )
 
     def test_generic_item_post(self):
-        payload = "IsCut=True"
+        payload = {"isCut" : True}
 
         try:
             response = make_keyed_post_request(payload, GENERIC_ITEM_URL_LOCAL)
@@ -114,7 +113,7 @@ class PublicLocalAPITests(unittest.TestCase):
         )
 
     def test_generic_item_subcategory_post(self):
-        payload = "Subcategory=On Stem"
+        payload = {"subcategory" : "On Stem"}
 
         try:
             response = make_keyed_post_request(payload, GENERIC_ITEM_SUBCATEGORY_LOCAL)
@@ -173,12 +172,30 @@ class PublicLocalAPITests(unittest.TestCase):
             msg=failure_msg,
         )
 
+    def test_matched_item_dict_post(self):
+        payload = {"scannedItemName" : "Premium Bananas"}
+
+        try:
+            response = make_keyed_post_request(payload, MATCHED_ITEM_DICT_LOCAL)
+        except Timeout:
+            self.fail(f"Request timed out")
+
+        failure_msg = f"Request failed. Response: {response.content}"
+        self.assertEqual(
+            response.status_code,
+            200,
+            msg=failure_msg,
+        )
+
     def tearDown(self) -> None:
         print("TEARING DOWN")
         stop_local_api(self.api)
         print(self.api.poll())
 
 
+"""
+Testing API hosted on remote server
+"""
 class PublicRemoteAPITests(unittest.TestCase):
     def setUp(self) -> None:
         pass
@@ -198,7 +215,7 @@ class PublicRemoteAPITests(unittest.TestCase):
         )
 
     def test_generic_item_post(self):
-        payload = "IsCut=True"
+        payload = {"isCut" : True}
 
         try:
             response = make_keyed_post_request(payload, GENERIC_ITEM_URL_REMOTE)
@@ -213,7 +230,7 @@ class PublicRemoteAPITests(unittest.TestCase):
         )
 
     def test_generic_item_subcategory_post(self):
-        payload = "Subcategory=On Stem"
+        payload = {"subcategory" : "On Stem"}
 
         try:
             response = make_keyed_post_request(payload, GENERIC_ITEM_SUBCATEGORY_REMOTE)
@@ -257,14 +274,14 @@ class PublicRemoteAPITests(unittest.TestCase):
             msg=failure_msg,
         )
 
-    def test_matched_item_dict_get(self):
-        payload = MATCHED_ITEM_DICT_REMOTE
-        
+    def test_matched_item_dict_post(self):
+        payload = {"scannedItemName" : "Premium Bananas"}
+
         try:
-            response = make_keyed_get_request(payload, MATCHED_ITEM_DICT_REMOTE)
+            response = make_keyed_post_request(payload, MATCHED_ITEM_DICT_REMOTE)
         except Timeout:
             self.fail(f"Request timed out")
-            
+
         failure_msg = f"Request failed. Response: {response.content}"
         self.assertEqual(
             response.status_code,
@@ -278,23 +295,23 @@ class PublicRemoteAPITests(unittest.TestCase):
 
 def test_suite_local_api():
     suite = unittest.TestSuite()
-    suite.addTest(PublicLocalAPITests("test_generic_item_get"))
+    # suite.addTest(PublicLocalAPITests("test_generic_item_get"))
     suite.addTest(PublicLocalAPITests("test_generic_item_post"))
     suite.addTest(PublicLocalAPITests("test_generic_item_subcategory_post"))
     suite.addTest(PublicLocalAPITests("test_generic_item_set_get"))
     suite.addTest(PublicLocalAPITests("test_generic_item_list_get"))
-    suite.addTest(PublicLocalAPITests("test_matched_item_dict_get"))
+    suite.addTest(PublicLocalAPITests("test_matched_item_dict_post"))
     return suite
 
 
 def test_suite_remote_api():
     suite = unittest.TestSuite()
-    suite.addTest(PublicRemoteAPITests("test_generic_item_get"))
+    # suite.addTest(PublicRemoteAPITests("test_generic_item_get"))
     suite.addTest(PublicRemoteAPITests("test_generic_item_post"))
     suite.addTest(PublicRemoteAPITests("test_generic_item_subcategory_post"))
     suite.addTest(PublicRemoteAPITests("test_generic_item_set_get"))
     suite.addTest(PublicRemoteAPITests("test_generic_item_list_get"))
-    suite.addTest(PublicRemoteAPITests("test_matched_item_dict_get"))
+    suite.addTest(PublicRemoteAPITests("test_matched_item_dict_post"))
     return suite
 
 
