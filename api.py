@@ -1,5 +1,6 @@
 from nis import match
 from wsgiref import validate
+from bson import ObjectId
 from flask import Flask, request
 from flask_restful import abort, Api, Resource
 
@@ -214,9 +215,8 @@ class MatchedItemDict(Resource):
             abort_matched_item_doesnt_exist(scanned_item_name)
         
         generic_item = query_generic_item_parameterized({
-            "_id" : matched_item_id
+            "_id" : ObjectId(matched_item_id)
         })
-
         return generic_item
 
 
